@@ -4,6 +4,8 @@ import 'package:ucanvas/src/controller/paint_controller.dart';
 import 'package:ucanvas/src/model/shape.dart';
 
 class InfiniteCanvas extends StatefulWidget {
+  const InfiniteCanvas({super.key});
+
   @override
   _InfiniteCanvasState createState() => _InfiniteCanvasState();
 }
@@ -11,7 +13,7 @@ class InfiniteCanvas extends StatefulWidget {
 class _InfiniteCanvasState extends State<InfiniteCanvas> {
   final TransformationController _transformationController =
       TransformationController();
-  List<Shape> _shapes = [];
+  final List<Shape> _shapes = [];
   ShapeType _currentShapeType = ShapeType.line;
   Offset? _startPoint;
   Offset? _currentDragPoint;
@@ -63,19 +65,19 @@ class _InfiniteCanvasState extends State<InfiniteCanvas> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Infinite Canvas"),
+        title: const Text("Infinite Canvas"),
         actions: [
           IconButton(
-            icon: Icon(Icons.create),
+            icon: const Icon(Icons.create),
             onPressed: () => setState(() => _currentShapeType = ShapeType.line),
           ),
           IconButton(
-            icon: Icon(Icons.circle),
+            icon: const Icon(Icons.circle),
             onPressed: () =>
                 setState(() => _currentShapeType = ShapeType.circle),
           ),
           IconButton(
-            icon: Icon(Icons.rectangle),
+            icon: const Icon(Icons.rectangle),
             onPressed: () =>
                 setState(() => _currentShapeType = ShapeType.rectangle),
           ),
@@ -117,7 +119,7 @@ class _InfiniteCanvasState extends State<InfiniteCanvas> {
           },
           child: InteractiveViewer(
             transformationController: _transformationController,
-            boundaryMargin: EdgeInsets.all(double.infinity),
+            boundaryMargin: const EdgeInsets.all(double.infinity),
             panEnabled: true,
             scaleEnabled: true,
             minScale: 0.1,
