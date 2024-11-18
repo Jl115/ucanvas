@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:ucanvas/src/components/canvas_component.dart';
+import 'package:ucanvas/src/components/drawing_canvas.dart';
+import 'package:ucanvas/src/components/notes_app.dart';
+import 'package:ucanvas/src/view/dashboard/dashboard.dart';
 
 import 'view/item/sample_item_details_view.dart';
 import 'view/item/sample_item_list_view.dart';
@@ -74,7 +77,7 @@ class MyApp extends StatelessWidget {
                     return const SampleItemDetailsView();
                   case SampleItemListView.routeName:
                   default:
-                    return InfiniteCanvas();
+                    return Dashboard();
                 }
               },
             );
