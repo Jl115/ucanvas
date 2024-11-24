@@ -2,7 +2,7 @@ name: ucanvas
 description: "A new Flutter project."
 
 # Prevent accidental publishing to pub.dev.
-publish_to: 'none'
+publish_to: "none"
 
 version: 1.0.0+1
 
@@ -15,6 +15,8 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   scribble: ^0.10.0+1
+  sqflite: ^2.4.1
+  drift: ^2.21.0
 
 dev_dependencies:
   flutter_test:
