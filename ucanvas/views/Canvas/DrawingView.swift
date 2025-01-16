@@ -7,16 +7,19 @@
 
 import SwiftUI
 
-
 import SwiftUI
 
 struct DrawingView: View {
-    @State private var lines = [Line]()
+
+    // ENVOIREMENT SCREEN STATE
+    @Environment(\.scenePhase) var scenePhase
+    // LOAD VIEW MODELS
+    @ObservedObject var canvasViewModel = CanvasViewModel()
     @State private var shapes = [ShapeItem]()
     @State private var deletedLines = [Line]()
     @State private var deletedShapes = [ShapeItem]()
 
-    @State private var selectedColor: Color = Color.red
+    @State private var selectedColor: Color = .red
     @State private var selectedLineWidth: CGFloat = 5
     @State private var selectedShape: ShapeType = .freeform
     @State private var mode: CanvasMode = .draw // Toggle between "draw" and "move"
@@ -37,12 +40,12 @@ struct DrawingView: View {
                 Color.white // Background color
 
                 // Canvas with zooming and panning
-                Canvas { context, size in
+                Canvas { context, _ in
                     context.translateBy(x: offset.width + currentDragOffset.width, y: offset.height + currentDragOffset.height)
                     context.scaleBy(x: scale, y: scale)
 
                     // Draw lines and shapes
-                    for line in lines {
+                    for line in canvasViewModel.lines {
                         let path = drawEngine.createPath(for: line.points)
                         context.stroke(path, with: .color(line.color), style: StrokeStyle(lineWidth: line.lineWidth / scale))
                     }
@@ -71,62 +74,16 @@ struct DrawingView: View {
                     offset: offset,
                     currentDragOffset: currentDragOffset,
                     scale: scale,
-                    lines: lines,
+                    lines: canvasViewModel.lines,
                     shapes: shapes
                 )
                 .frame(width: 150, height: 150)
                 .position(x: geometry.size.width - 100, y: 100)
 
                 // Floating Menu
-                VStack {
-                    HStack {
-                        ColorPicker("Line Color", selection: $selectedColor)
-                            .labelsHidden()
+                FloatingMenuView(canvasViewModel: canvasViewModel ,shapes: $shapes, deletedLines: $deletedLines, deletedShapes: $deletedShapes, selectedColor: $selectedColor, selectedLineWidth: $selectedLineWidth, selectedShape: $selectedShape, mode: $mode, scale: $scale, offset: $offset, currentDragOffset: $currentDragOffset, lastScale: $lastScale
 
-                        Slider(value: $selectedLineWidth, in: 1...15) {
-                            Text("Line Width")
-                        }
-                        .frame(maxWidth: 150)
-
-                        Picker("Mode", selection: $mode) {
-                            ForEach(CanvasMode.allCases, id: \.self) { mode in
-                                Text(mode.rawValue.capitalized)
-                            }
-                        }
-                        .pickerStyle(MenuPickerStyle())
-
-                        Button(action: {
-                            if let lastLine = lines.popLast() {
-                                deletedLines.append(lastLine)
-                            } else if let lastShape = shapes.popLast() {
-                                deletedShapes.append(lastShape)
-                            }
-                        }) {
-                            Image(systemName: "arrow.uturn.backward.circle")
-                                .imageScale(.large)
-                        }
-                        .disabled(lines.isEmpty && shapes.isEmpty)
-
-                        Button(action: {
-                            if let restoredShape = deletedShapes.popLast() {
-                                shapes.append(restoredShape)
-                            } else if let restoredLine = deletedLines.popLast() {
-                                lines.append(restoredLine)
-                            }
-                        }) {
-                            Image(systemName: "arrow.uturn.forward.circle")
-                                .imageScale(.large)
-                        }
-                        .disabled(deletedLines.isEmpty && deletedShapes.isEmpty)
-
-                        Button("Delete All") {
-                            lines.removeAll()
-                            shapes.removeAll()
-                            deletedLines.removeAll()
-                            deletedShapes.removeAll()
-                        }
-                        .foregroundColor(.red)
-                    }
+                )
                     .padding()
                     .background(
                         RoundedRectangle(cornerRadius: 10)
@@ -134,11 +91,20 @@ struct DrawingView: View {
                             .shadow(radius: 5)
                     )
                     .padding()
+                    .position(x: geometry.size.width / 2, y: geometry.size.height - 50) // Adjust `y` for padding
 
                     Spacer()
                 }
+
             }
-        }
+            .onChange(of: scenePhase, initial: false) { oldPhase, newPhase in
+                print("old: \(oldPhase), new: \(newPhase)")
+                if newPhase == .inactive {
+                    canvasViewModel.save()
+                }
+            }
+
+
         .edgesIgnoringSafeArea(.all)
     }
 
@@ -155,10 +121,10 @@ struct DrawingView: View {
                 singleFingerPanningGesture(geometry: geometry)
                     .simultaneously(with: twoFingerZoomGesture(geometry: geometry))
                     .map { _ in () }
-
             )
         }
     }
+
     // Gesture for single-finger panning
     private func singleFingerPanningGesture(geometry: CGSize) -> some Gesture {
         DragGesture()
@@ -195,10 +161,10 @@ struct DrawingView: View {
                 let newPoint = convertToCanvasCoordinates(value.location)
                 if selectedShape == .freeform {
                     if value.translation.width + value.translation.height == 0 {
-                        lines.append(Line(points: [newPoint], color: selectedColor, lineWidth: selectedLineWidth))
+                        canvasViewModel.lines.append(Line(points: [newPoint], color: selectedColor, lineWidth: selectedLineWidth))
                     } else {
-                        let index = lines.count - 1
-                        lines[index].points.append(newPoint)
+                        let index = canvasViewModel.lines.count - 1
+                        canvasViewModel.lines[index].points.append(newPoint)
                     }
                 } else {
                     let start = convertToCanvasCoordinates(value.startLocation)
@@ -220,10 +186,10 @@ struct DrawingView: View {
                     }
                 }
             }
-            .onEnded { value in
+            .onEnded { _ in
                 if selectedShape == .freeform {
-                    if let last = lines.last?.points, last.isEmpty {
-                        lines.removeLast()
+                    if let last = canvasViewModel.lines.last?.points, last.isEmpty {
+                        canvasViewModel.lines.removeLast()
                     }
                 } else {
                     shapes[shapes.count - 1].isFinalized = true
@@ -255,16 +221,6 @@ enum CanvasMode: String, CaseIterable {
     case draw
     case move
 }
-
-
-
-
-
-
-
-
-
-
 
 #Preview {
     DrawingView()
