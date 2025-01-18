@@ -61,6 +61,29 @@ class DrawingEngine {
         return path
     }
 
+    
+    func createBezierPath(for points: [CGPoint]) -> UIBezierPath {
+        let path = UIBezierPath()
+        guard points.count > 1 else { return path }
+
+        path.move(to: points[0])
+
+        for i in 1..<points.count {
+            let midPoint = calcuateMidPoint(points[i - 1], points[i])
+            path.addQuadCurve(to: midPoint, controlPoint: points[i - 1])
+        }
+
+        // Instead of a line, do one final quad curve from the last midpoint to the final point:
+        if points.count >= 2 {
+            let lastIndex = points.count - 1
+            path.addQuadCurve(to: points[lastIndex], controlPoint: points[lastIndex - 1])
+        }
+
+        return path
+    }
+
+
+
 
     func calcuateMidPoint(_ point1: CGPoint, _ point2: CGPoint) -> CGPoint {
        return CGPoint(x: (point1.x + point2.x) / 2, y: (point1.y + point2.y) / 2)
