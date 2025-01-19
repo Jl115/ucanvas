@@ -11,7 +11,6 @@ import SwiftUI
 
 struct FloatingMenuView: View {
     @ObservedObject var drawingViewModel: DrawingViewViewModel  // ✅ Directly use ViewModel
-    @Binding var selectedColor: Color
     @Binding var selectedLineWidth: CGFloat
     @Binding var selectedShape: ShapeType
     @Binding var mode: CanvasMode
@@ -19,7 +18,10 @@ struct FloatingMenuView: View {
     var body: some View {
         VStack {
             HStack {
-                ColorPicker("Line Color", selection: $selectedColor)
+                ColorPicker(
+                    "Line Color",
+                    selection: $drawingViewModel.selectedColor
+                )
                     .labelsHidden()
 
                 Slider(value: $selectedLineWidth, in: 1...15) {

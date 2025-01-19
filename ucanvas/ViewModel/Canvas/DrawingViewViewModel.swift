@@ -6,10 +6,14 @@
 //
 
 import Foundation
-
+import SwiftUI
 class DrawingViewViewModel: ObservableObject {
     @Published var lines = [Line]()
     @Published var deletedLines = [Line]()  // ✅ Store deleted lines for redo
+    @Published var selectedLineWidth: CGFloat = 5
+    @Published var selectedColor: Color = .red
+
+
 
     init() {
         loadSavedData()

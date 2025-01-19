@@ -21,6 +21,7 @@ class CanvasEengine: UIView {
     // Gesture Recognizers (only keep panning + pinching)
     private var panGesture: UIPanGestureRecognizer!
     private var pinchGesture: UIPinchGestureRecognizer!
+    private var temporaryLine: Line? = nil
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -47,14 +48,22 @@ class CanvasEengine: UIView {
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
         if let touch = touches.first, touch.type == .pencil {
-                print("Apple Pencil is being used!")
+            print("Apple Pencil is being used!")
             return
-            }
+        }
         let location = touch.location(in: self)
         let transformed = convertToCanvasCoordinates(location)
 
         currentPoints = [transformed]
+
+        // Initialize `temporaryLine` immediately
+        temporaryLine = Line(
+            points: [transformed],
+            color: viewModel?.selectedColor ?? .black,
+            lineWidth: viewModel?.selectedLineWidth ?? 2.0
+        )
     }
+
 
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
@@ -62,23 +71,32 @@ class CanvasEengine: UIView {
         let transformed = convertToCanvasCoordinates(location)
 
         currentPoints.append(transformed)
+
+        // Temporary line with the current color & width
+        temporaryLine = Line(
+            points: currentPoints,
+            color: viewModel?.selectedColor ?? .black,
+            lineWidth: viewModel?.selectedLineWidth ?? 2.0
+        )
+
         setNeedsDisplay()
     }
 
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-        // finalize drawing with DrawingEngine
-        let finalPath = drawEngine.createBezierPath(for: currentPoints)
-        let newLine = Line(
-            points: finalPath.cgPath.points(),
-            color: .red,
-            lineWidth: 2 / scale
-        )
-        viewModel?.lines.append(newLine)
+        guard let tempLine = temporaryLine, !tempLine.points.isEmpty else { return }
+
+        // Store the completed stroke
+        viewModel?.lines.append(tempLine)
         viewModel?.save()
-        print("touch ended")
+
+        // Clear the temporary line
+        temporaryLine = nil
         currentPoints.removeAll()
+
         setNeedsDisplay()
     }
+
+
 
     // MARK: - Zoom & Pan Handlers
     @objc private func handlePanning(_ gesture: UIPanGestureRecognizer) {
@@ -139,6 +157,27 @@ class CanvasEengine: UIView {
         return CGPoint(x: transformedX, y: transformedY)
     }
 
+    // Function to draw a given line with its properties
+    func drawLine(_ line: Line, context: CGContext) {
+        guard let firstPoint = line.points.first else { return }
+
+        let path = UIBezierPath()
+        path.move(to: firstPoint)
+        for point in line.points.dropFirst() {
+            path.addLine(to: point)
+        }
+
+        // Convert SwiftUI.Color to UIColor
+        let uiColor = UIColor(line.color)
+        context.setStrokeColor(uiColor.cgColor)
+
+        // Apply correct line width
+        context.setLineWidth(line.lineWidth / scale)
+
+        context.addPath(path.cgPath)
+        context.strokePath()
+    }
+
     // MARK: - Drawing
     override func draw(_ rect: CGRect) {
         guard let context = UIGraphicsGetCurrentContext() else { return }
@@ -147,24 +186,20 @@ class CanvasEengine: UIView {
         context.translateBy(x: offset.x, y: offset.y)
         context.scaleBy(x: scale, y: scale)
 
-        // Existing lines from ViewModel
-        viewModel?.lines.forEach { line in
-            let path = UIBezierPath()
-            guard let firstPoint = line.points.first else { return }
-            path.move(to: firstPoint)
-            for point in line.points.dropFirst() {
-                path.addLine(to: point)
-            }
-            UIColor.red.setStroke()
-            path.lineWidth = line.lineWidth
-            path.stroke()
-        }
 
-        // Draw in-progress path
+        // Draw all stored lines from ViewModel
+        viewModel?.lines.forEach { drawLine($0, context: context) }
+
+        // Draw in-progress line with correct color and width
         if !currentPoints.isEmpty {
+            //TODO: Improve lines for curved lines
             let tempPath = drawEngine.createBezierPath(for: currentPoints)
-            UIColor.red.setStroke()
-            tempPath.lineWidth = 2 / scale
+
+            let tempColor = viewModel?.selectedColor ?? .black
+            let uiTempColor = UIColor(tempColor)
+            uiTempColor.setStroke()  // Apply correct stroke color
+
+            tempPath.lineWidth = (viewModel?.selectedLineWidth ?? 2.0) / scale  // Use selected width
             tempPath.stroke()
         }
 
@@ -173,13 +208,13 @@ class CanvasEengine: UIView {
 }
 
 // Helper extension to extract points from CGPath
-extension CGPath {
-    func points() -> [CGPoint] {
-        var points: [CGPoint] = []
-        applyWithBlock { element in
-            let point = element.pointee.points.pointee
-            points.append(point)
-        }
-        return points
-    }
-}
+//extension CGPath {
+//    func points() -> [CGPoint] {
+//        var points: [CGPoint] = []
+//        applyWithBlock { element in
+//            let point = element.pointee.points.pointee
+//            points.append(point)
+//        }
+//        return points
+//    }
+//}

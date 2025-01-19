@@ -81,6 +81,32 @@ class DrawingEngine {
 
         return path
     }
+//    func createBezierPath(for points: [CGPoint]) -> UIBezierPath {
+//        let path = UIBezierPath()
+//        guard points.count > 1 else { return path }
+//
+//        path.move(to: points[0])
+//
+//        if points.count == 2 {
+//            // If only two points, draw a simple line
+//            path.addLine(to: points[1])
+//            return path
+//        }
+//
+//        for i in 1..<points.count - 1 {
+//            let previous = points[i - 1]
+//            let current = points[i]
+//            let next = points[i + 1]
+//
+//            // Calculate control points for cubic Bézier
+//            let control1 = CGPoint(x: (previous.x + current.x) / 2, y: (previous.y + current.y) / 2)
+//            let control2 = CGPoint(x: (current.x + next.x) / 2, y: (current.y + next.y) / 2)
+//
+//            path.addCurve(to: next, controlPoint1: control1, controlPoint2: control2)
+//        }
+//
+//        return path
+//    }
 
 
 

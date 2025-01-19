@@ -11,7 +11,7 @@ import SwiftUI
 struct DrawingView: View {
     @StateObject private var viewModel = DrawingViewViewModel()
 
-    @State private var selectedColor: Color = .red
+
     @State private var selectedLineWidth: CGFloat = 5
     @State private var selectedShape: ShapeType = .freeform
     @State private var mode: CanvasMode = .draw // Toggle between "draw" and "move"
@@ -28,8 +28,7 @@ struct DrawingView: View {
                 // Floating Menu (Positioned on screen)
                 FloatingMenuView(
                     drawingViewModel: viewModel, // ✅ Directly passes ViewModel
-                    selectedColor: $selectedColor,
-                    selectedLineWidth: $selectedLineWidth,
+                    selectedLineWidth: $viewModel.selectedLineWidth,
                     selectedShape: $selectedShape,
                     mode: $mode
                 )
@@ -43,6 +42,9 @@ struct DrawingView: View {
             }
         }
         .onDisappear {
+            viewModel.save()
+        }
+        .onSubmit {
             viewModel.save()
         }
     }
